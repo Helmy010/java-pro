@@ -41,13 +41,20 @@ public class MainFrame extends JFrame {
                                                    int row,
                                                    int column) {
         Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-        String status = table.getModel().getValueAt(row, 4).toString(); // عمود Status
+        String status = table.getModel().getValueAt(row, 4).toString();
         if(status.equals("OVERDUE")) {
             c.setForeground(Color.RED);
-        } else {
+        }
+        else if(status.equals("IN_PROGRESS")){
+            c.setForeground(Color.BLUE);
+        }
+        else if(status.equals("DONE")){
+            c.setForeground(Color.GREEN);
+        }
+        else{
             c.setForeground(Color.BLACK);
         }
-        return c;
+            return c;
         }
         });
 
@@ -57,23 +64,26 @@ public class MainFrame extends JFrame {
 
         JButton addBtn = new JButton("Add Task");
         JButton deleteBtn = new JButton("Delete Task");
+        JButton startBtn = new JButton("In_Progress");
         JButton doneBtn = new JButton("Mark Done");
 
         buttonPanel.add(addBtn);
         buttonPanel.add(deleteBtn);
+        buttonPanel.add(startBtn);
         buttonPanel.add(doneBtn);
 
         add(buttonPanel,BorderLayout.SOUTH);
 
         addBtn.addActionListener(e -> addTask());
         deleteBtn.addActionListener(e -> deleteTask());
+        startBtn.addActionListener(e -> markInProgress());
         doneBtn.addActionListener(e -> markDone());
 
         refreshTable();
         Timer timer = new Timer(60000, new ActionListener() {
         @Override
         public void actionPerformed(ActionEvent e) {
-            refreshTable();  // كل دقيقة سيحدث الجدول ويشيك المهام المتأخرة
+            refreshTable();  
         }
         });
         timer.start();
@@ -102,10 +112,10 @@ public class MainFrame extends JFrame {
 
     LocalDateTime dueDateTime = LocalDateTime.parse(dueInput);
 
-    // فقط إرسال البيانات للـ TaskManager
+   
     manager.addTask(title, description, priority, dueDateTime);
 
-    // تحديث الجدول
+    
     refreshTable();
 }
 
@@ -119,6 +129,23 @@ public class MainFrame extends JFrame {
         int id = (int)tableModel.getValueAt(row,0);
 
         manager.deleteTask(id);
+        refreshTable();
+    }
+
+    private void markInProgress(){
+
+        int row = table.getSelectedRow();
+
+        if(row == -1)
+            return;
+
+        int id = (int)tableModel.getValueAt(row,0);
+
+        manager.getTasks().stream()
+                .filter(t -> t.getId() == id)
+                .findFirst()
+                .ifPresent(t -> t.setStatus(model.Status.IN_PROGRESS));
+
         refreshTable();
     }
 
